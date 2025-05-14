@@ -1,6 +1,6 @@
 #para iniciar el servidor en FastAPI : uvicorn users:app --reload
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel #esta importacion sirve para crear etidades es decir crear clases orientadas a objetos 
 
 app = FastAPI()
@@ -52,7 +52,7 @@ async def user(id:int):
 def Buscar(id: int): #esta es una manera practica para no tener todo en el mismo http y asi es una manera facil de hacerlo y con menos errores  
     users = filter(lambda user: user.id == id, users_list)
     try:
-        return list(users)[0]
+        return list(users)[0]#ese "[0]" que se ve ahi significa que buscara el primer resultado de la busqueda que tenga parecido
     except:
         return {"error":"no se ha encontrado el usuario"}
 
@@ -65,3 +65,5 @@ async def user(id:int, name:str):
         return list(users)[0]
     except:
         return {"error":"no se ha encontrado el usuario"}
+    
+    

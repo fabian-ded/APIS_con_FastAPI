@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/productos", tags=["productos"])#El "prefix" es una funcion que nos permite colocar la ruta establecida para todo el crud que se haga aqui
 
@@ -12,5 +12,8 @@ async def Productos():
 
 @router.get("/{id}")#aqui se llama desde la url para que se muestren los datos de los usuarios
 #usando ademas "routers" para ser llamado asi este corriendo el server en main
-async def Productos(id: int):
-    return list_productos[id]
+async def Productos(id:int):
+    try:
+        return list_productos[id]
+    except:
+        raise HTTPException(status_code=404, detail=("Producto no encontrado"))

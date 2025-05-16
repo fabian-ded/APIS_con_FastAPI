@@ -7,8 +7,14 @@
 #para iniciar el servidor en FastAPI : uvicorn main:app --reload
 
 from fastapi import FastAPI
+from routers import productos, users
 
+#iniciar servidor
 app = FastAPI()
+
+#rutas del servidor
+app.include_router(productos.router)
+app.include_router(users.router)
 
 @app.get("/")
 async def root(): #muy improtante es tener claro como se va a llamar cada funcion para no ser confundido

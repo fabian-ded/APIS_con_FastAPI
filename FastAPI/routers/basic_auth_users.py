@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm #la primera funcion importada nos permite jestionar la autenticacion del usuario y contraseña
 #la segunda funcion realiza una capturacion de ese usuario y contraseña para que el backen sepa si el usuario hace parte de nuestro sistema
 
-app = FastAPI()
+router = APIRouter()
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="login")#aqui se realiza esta linea que es la encargada de manejar el sistema de autenticacion mediante el "TokenUrLl:login" que se va a pasar abajo cuando se haga la logica de ingresar la contrase y usuario
 
@@ -50,7 +50,7 @@ async def current_user(token: str = Depends(oauth2)):#aqui se va a pasar el toke
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Usuario inactivo")
     return user #si sale bien nos retornara la informacion del usuario autenticado
     
-@app.post("/login") 
+@router.post("/login/basico") 
 async def login(form: OAuth2PasswordRequestForm = Depends()):#aqui se atrapa la contraseña y usuario
     user_db = users_db.get(form.username)#aqui esta la logica par a buscar si coincide con lo que se tiene en la base de datos
     if not user_db:#sino existe arroja un error
@@ -62,6 +62,6 @@ async def login(form: OAuth2PasswordRequestForm = Depends()):#aqui se atrapa la 
     
     return{"access_token": user.username, "token_type": "bearer"}#aqui si todo salio bien se le da permisos de autenticacion para que pueda utilizar la aplicacion y pueda buscar etc..
 
-@app.get("/users/me")
+@router.get("/users/me/basico")
 async def yo(user: User = Depends(current_user)):#aqui permite que el usuario autenticado pueda buscar sus propios datos
     return user

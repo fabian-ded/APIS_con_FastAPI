@@ -7,7 +7,7 @@
 #para iniciar el servidor en FastAPI : uvicorn main:app --reload
 
 from fastapi import FastAPI
-from routers import productos, users
+from routers import productos, users, basic_auth_users, jwt_auth_users #aqui se pasan los archivos para que corran en el servidor de main
 from fastapi.staticfiles import StaticFiles #aqui se deben colocar la biblioteca para utilizar los archivos estaticos
 
 #iniciar servidor
@@ -16,6 +16,8 @@ app = FastAPI()
 #rutas del servidor
 app.include_router(productos.router)
 app.include_router(users.router)
+app.include_router(basic_auth_users.router)
+app.include_router(jwt_auth_users.router)
 
 #rutas estaticas
 app.mount("/static", StaticFiles(directory="static"), name="static")#esta linea es para hacer funcionar las imagenes, es decir archivos estaticos

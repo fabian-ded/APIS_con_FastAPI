@@ -5,7 +5,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm #la
 
 router = APIRouter()
 
-oauth2 = OAuth2PasswordBearer(tokenUrl="login")#aqui se realiza esta linea que es la encargada de manejar el sistema de autenticacion mediante el "TokenUrLl:login" que se va a pasar abajo cuando se haga la logica de ingresar la contrase y usuario
+oauth2 = OAuth2PasswordBearer(tokenUrl="login")#aqui se realiza esta linea que es la encargada de manejar el sistema de autenticacion mediante el "TokenUrLl:login"
+#que se va a pasar abajo cuando se haga la logica de ingresar la contrase y usuario en la url de /login
 
 #Entidad users
 
@@ -50,7 +51,7 @@ async def current_user(token: str = Depends(oauth2)):#aqui se va a pasar el toke
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Usuario inactivo")
     return user #si sale bien nos retornara la informacion del usuario autenticado
     
-@router.post("/login/basico") 
+@router.post("/login/basico")
 async def login(form: OAuth2PasswordRequestForm = Depends()):#aqui se atrapa la contraseña y usuario
     user_db = users_db.get(form.username)#aqui esta la logica par a buscar si coincide con lo que se tiene en la base de datos
     if not user_db:#sino existe arroja un error

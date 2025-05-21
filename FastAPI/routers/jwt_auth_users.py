@@ -51,12 +51,17 @@ def buscar_usuario(username: str):#aqui el usuario nos da su nombre
     if username in users_db: #se mira si si esta en la base de datos
         return User(**users_db[username]) #retornara los datos de este, si esta en la base de datos
 
-async def auth_user(token: str = Depends(oauth2)): 
+async def auth_user(token: str = Depends(oauth2)): #aqui se verifica el token 
     Exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                               detail="Credenciales de autenticacion invalidas",
                               headers={"WWW-Authenticate": "Bearer"})
     try:
-        username = jwt.decode(token, SECRET, algorithms=[ALGORITHM]).get("sub")
+        username = jwt.decode(#este "jwt.decode" se utiliza para descodificar el token.
+                            token, #Es el token que envia el cliente
+                            SECRET, #Es la clave secreta que se usa para firmar/crear el token que Solo el servidor la conoce.
+                            #Sirve para verificar que el token no haya sido alterado y que fue emitido por el mismo servidor.
+                            algorithms=[ALGORITHM]#aqui se especifica el algoritmo de firma que se usó (en este caso, HS256)
+                              ).get("sub")
         if username is None:
             raise Exception
         
@@ -64,19 +69,12 @@ async def auth_user(token: str = Depends(oauth2)):
         raise Exception
     
     return buscar_usuario(username)
-        
-
-
-
 
 async def current_user(user: User = Depends(auth_user)):#aqui se va a pasar el token a utilizar
     if user.disabled:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Usuario inactivo")
     return user #si sale bien nos retornara la informacion del usuario autenticado
-
-
-
 
 
 @router.post("/login/robusto") 
@@ -91,9 +89,10 @@ async def login(form: OAuth2PasswordRequestForm = Depends()):#aqui se atrapa la 
     
     access_token = {"sub": user.username, "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_DURATION)}#aqui estamos dando la logica de cuanto tiempo tiene permiso el token para ser desactivado
     
-    return{"access_token": jwt.encode(access_token,#aqui va la logica del permiso de access_token que es el tiempo
-                                      SECRET,#aqui se usa para afirmar el token y verificar su autenticidad
-                                      algorithm=ALGORITHM),#y aqui es el metodo para crear el token
+    return{"access_token": jwt.encode(#este "jwt.encode" se utiliza para crear (codificar y firmar) un JWT.
+                                    access_token,#aqui va la logica del permiso de access_token que es el tiempo
+                                    SECRET,#aqui se usa para afirmar el token y verificar su autenticidad
+                                    algorithm=ALGORITHM),#y aqui es el metodo para crear el token
            "token_type": "bearer"}#aqui si todo salio bien se le da permisos de autenticacion para que pueda utilizar la aplicacion y pueda buscar etc..
 
 @router.get("/users/me/robusto")

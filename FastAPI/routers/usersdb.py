@@ -56,14 +56,15 @@ async def user(user: User): #aqui se pasa el usuario a crear
     #if type(Buscar(user.id)) == User: #aqui se busca si el usuario existe, si existe no se creara y se busca mediante el id
         #raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="el usuario ya existe")
 
-    user_dict = dict(user)
-    del user_dict["id"]
+    user_dict = dict(user)#aqui dict(user) convierte el objeto en un diccionario (porque Mongo no guarda objetos Pydantic).
+    del user_dict["id"]#aqui borramos "id" porque cuando se crea un usuario nuevo, Mongo genera su propio _id automáticamente.
 
-    id = db_client.local.users.insert_one(user_dict).inserted_id
-
-    new_user = user_schema(db_client.local.users.find_one({"_id" : id}))
-
-    return User(**new_user)
+    id = db_client.local.users.insert_one(user_dict).inserted_id #aqui Se guarda el usuario en la base de datos y con inserted_id devuelve el ID (ObjectId) que Mongo le puso.
+#insert_one es para crear
+    new_user = user_schema(db_client.local.users.find_one({"_id" : id}))#aqui se esta recuperando la informacion del usuario mediante el "_id" y el "id", que anteriormente mongoDB ya nos habia
+    #dado su "_id" creado por el y se paso a la variable de "id" por eso se hace la comparacion
+#find_one es para comparar
+    return User(**new_user)#las dos "**" se utilizan para desempaquetar los archivos json y los transforma a argumentos de (id="4")
 
 
 

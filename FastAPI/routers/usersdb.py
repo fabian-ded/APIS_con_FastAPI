@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, status
 from db.models.user import User #para importar la clase que se creo de "User" para la base de datos los datos que debe tener cada usuario
 from db.cliente import db_client #se importa la base de datos
-from db.schemas.user import user_schema # se importa
+from db.schemas.user import user_schema # se importa el archivo que nos va extraer los datos que venga de la base de datos de mongoDB
 
 router = APIRouter(prefix="/userdb",
                    tags=["userdb"])#El "prefix" es una funcion que nos permite colocar la ruta establecida para todo el crud que se haga aqui

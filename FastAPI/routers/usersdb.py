@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from db.models.user import User #para importar la clase que se creo de "User" para la base de datos los datos que debe tener cada usuario
 from db.cliente import db_client #se importa la base de datos
 from db.schemas.user import user_schema, users_schema # se importa el archivo que nos va extraer los datos que venga de la base de datos de mongoDB
-from bson import ObjectId
+from bson import ObjectId #importa ObjectId para poder trabajar con los identificadores únicos (_id) que MongoDB asigna automáticamente a cada dato (registro).
 
 router = APIRouter(prefix="/userdb",
                    tags=["userdb"])#El "prefix" es una funcion que nos permite colocar la ruta establecida para todo el crud que se haga aqui
@@ -21,12 +21,13 @@ async def users():
 #ejemplo mio, para llamar mediante el id "path"
 @router.get("/{id}")
 async def user(id:str):
-    return Buscar("_id", ObjectId(id))
+    return Buscar("_id", ObjectId(id))#aqui estamos diciendo que en la base de datos, busque el id que nos dio el usuario y como el id lo genero mongoDB usamos la libreria de 
+#"ObjectId" que es el que trabaja con eses identificadores unicos de "_id".
 
 #ejemplo del curso query
 @router.get("/")    
 async def user(id:str):
-    return Buscar("_id", ObjectId(id))#aqui se llama la funcion que se creo para que haga la logica de comprar los id con la url pasada
+    return Buscar("_id", ObjectId(id))#aqui se llama la funcion que se creo para que haga la logica de comparar los id con la url data por el usuario
 
 #ejemplo mio
 @router.get("/")
@@ -69,7 +70,7 @@ async def user(id:int, name:str):
 
 @router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
 async def user(user: User): #aqui se pasa el usuario a crear
-    if type(Buscar("email",user.email)) == User: #aqui se busca si el email existe, si existe no se creara y lanza un error, "email" es field y "user.email" es key, en la funcion de buscar 
+    if type(Buscar("email",user.email)) == User: #aqui se busca si el email existe, si existe no se creara y lanza un error, "email" es field=base de datos y "user.email" es key=datos enviados por el usuario, en la funcion de buscar 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="el usuario ya existe")
 
@@ -115,8 +116,8 @@ async def user(id:int):
     
 def Buscar(field: str, key): #field lo que se quiere buscar, key donde se quiere encontrar o buscar
     try:
-        user = db_client.local.users.find_one({field: key})#aqui estamos haciendo es que "field" es el criterio de busqueda y "key" es la clave por la cual quiero buscar
-        #es decir que si quiero buscar el nombre"field" en la base de datos, pues se pasa que en donde quieres que busque "key" ejemplo "nombre(field)==nombre(key)"  
+        user = db_client.local.users.find_one({field: key})#aqui estamos haciendo es que "field" es el criterio de busqueda osea donde se tiene que buscar en la base de datos y "key" es la clave por la que el usuario esta buscando
+        #es decir que si quiero buscar el nombre"key" en la base de datos, pues se pasa que en donde quieres que busque "field" donde esta ubicada esa imformacion en la base de datos ejemplo "nombre(field=base de datos)==nombre(key=dato enviado por el usuario)"  
         if user is not None:#si user no esta es decir esta bacio se retorna lo de abajo
             return User(**user_schema(user))#aqui se retorna la informacion desempaquetada es decir un json limpio
     except:

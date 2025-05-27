@@ -10,10 +10,11 @@ router = APIRouter(prefix="/userdb",
                    tags=["userdb"])#El "prefix" es una funcion que nos permite colocar la ruta establecida para todo el crud que se haga aqui
 
     
-users_list=[()]
 
 
-@router.get("/", response_model=list[User])#aqui se llama desde la url para que se muestren los datos de los usuarios
+@router.get("/", response_model=list[User])#aqui se llama desde la url para que se muestren los datos de los usuarios, ademas el
+#response_model=list[User] especifica que la respuesta HTTP será una lista de objetos JSON, es decir que lo que devuelva la funcion
+#debe ser una lista de usuariossegun el modelo de "User"
 async def users():
     #aqui se muestra la lista de los datos de los usuarios
     return users_schema(db_client.local.users.find())#con el find() estamos pidiendo toda la informacion que tengamos en la base de datos
@@ -21,22 +22,22 @@ async def users():
 #ejemplo mio, para llamar mediante el id "path"
 @router.get("/{id}")
 async def user(id:str):
-    return Buscar("_id", ObjectId(id))#aqui estamos diciendo que en la base de datos, busque el id que nos dio el usuario y como el id lo genero mongoDB usamos la libreria de 
+    usuario = Buscar("_id", ObjectId(id))#aqui estamos diciendo que en la base de datos, busque el id que nos dio el usuario y como el id lo genero mongoDB usamos la libreria de 
 #"ObjectId" que es el que trabaja con eses identificadores unicos de "_id".
+    if usuario is not None:
+        return usuario
+    else:
+        raise HTTPException (status_code=status.HTTP_404_NOT_FOUND, detail="no se ha encontrado el usuario")
 
-#ejemplo del curso query
-@router.get("/")    
-async def user(id:str):
-    return Buscar("_id", ObjectId(id))#aqui se llama la funcion que se creo para que haga la logica de comparar los id con la url data por el usuario
 
 #ejemplo mio
-@router.get("/")
-async def user(id:int, name:str):
-    users = filter(lambda user: user.id == id and user.name == name, users_list)
-    try:
-        return list(users)[0]
-    except:
-        return {"error":"no se ha encontrado el usuario"}
+# @router.get("/")
+# async def user(id:int, name:str):
+#     users = filter(lambda user: user.id == id and user.name == name, users_list)
+#     try:
+#         return list(users)[0]
+#     except:
+#         return {"error":"no se ha encontrado el usuario"}
 
 
 
@@ -68,7 +69,7 @@ async def user(id:int, name:str):
 
 
 
-@router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)#aqui estamos diciendo que debe de devolver al usuario un json segun la clase que tenemos deficida de User
 async def user(user: User): #aqui se pasa el usuario a crear
     if type(Buscar("email",user.email)) == User: #aqui se busca si el email existe, si existe no se creara y lanza un error, "email" es field=base de datos y "user.email" es key=datos enviados por el usuario, en la funcion de buscar 
         raise HTTPException(
@@ -86,33 +87,31 @@ async def user(user: User): #aqui se pasa el usuario a crear
 
 
 
-@router.put("/")
+@router.put("/", response_model=User, status_code=status.HTTP_202_ACCEPTED)#aqui estamos diciendo que debe de devolver al usuario un json segun la clase que tenemos deficida de User
 async def user(user: User):#aqui se pasa el usuario a buscar, que venga de la instancia de la clase User.
-        found = False #esto sirve para saber si ya se hizo la actualizacion es decir si se actualizo pasara a true como esta mas abajo del codigo
-        for index, mirar_usuario in enumerate(users_list):#aqui se hace un bucle para buscar todos los usuarios en la lista de arriba
-            #ademas se agrega un "index" y un "enumerate" para enuerar a cada usuario
-            if mirar_usuario.id == user.id: #se compara de que el id del usuario enviado por la url como el de el json sea iguales
-                users_list[index] = user #se actualiza el nuevo usuario
-                found = True #aqui
-                break #frena el bucle
-        if not found:
-            raise HTTPException (status_code=status.HTTP_404_NOT_FOUND, detail="no se ha encontrado el usuario")
-        else:
-            return user #aqui es para ver que cambios hicimos es decir si salio todo bien con un "200"
-
-@router.delete("/{id}")
-async def user(id:int):
-    found = False #esto sirve para saber si ya se hizo la actualizacion es decir si se actualizo pasara a true como esta mas abajo del codigo
-    for index, mirar_usuario in enumerate(users_list):#aqui se hace un bucle para buscar todos los usuarios en la lista de arriba
-        #ademas se agrega un "index" y un "enumerate" para enumerar a cada usuario
-        if mirar_usuario.id == id: #se compara de que el id del usuario enviado por la url como el de el json sea iguales
-            del users_list[index] #se elimina el usuario
-            found = True #aqui
         
+        user_dict = dict(user)#aqui dict(user) convierte el objeto en un diccionario (porque Mongo no guarda objetos Pydantic).
+        del user_dict["id"]#aqui borramos "id" porque cuando se crea un usuario nuevo, Mongo genera su propio _id automáticamente.
+
+        try:#manejo de error
+            db_client.local.users.find_one_and_replace(
+            {"_id": ObjectId(user.id)}, # 1. El filtro para encontrar el usuario
+            user_dict ) # 2. El documento de reemplazo
+            #es decir, cuando se incuentra el usuario ahora el "user_dict" pasa a tener los nuevos datos actualizados, haciendo que 
+            #ahora los nuevos datos que tiene esta variable, remplace el contenido de los datos del usuario que tenia en ese momento
+        except:
+            return {"error": "no se ha actualizado el usuario"}
+           
+        return Buscar("_id", ObjectId(user.id)) #aqui es para ver que cambios hicimos es decir si salio todo bien con un "200"
+    #ademas buscamos el usuario actualizado y lo mostramos al usuario
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def user(id: str):
+    found = db_client.local.users.find_one_and_delete({"_id": ObjectId(id)})#aqui buscamos el usuarui y ademas "find_one_and_delete"
+    #nos permite eliminar ese usuario
     if not found:
-        raise HTTPException (status_code=status.HTTP_401_UNAUTHORIZED, detail="no se ha encontrado el usuario")
-    else:
-        return {"message": f"Usuario con id {id} eliminado correctamente"} #Respuesta de éxito
+        raise {"error": "no se elimino el usuario"}
     
 def Buscar(field: str, key): #field lo que se quiere buscar, key donde se quiere encontrar o buscar
     try:

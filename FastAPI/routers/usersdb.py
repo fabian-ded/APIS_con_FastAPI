@@ -17,7 +17,7 @@ router = APIRouter(prefix="/userdb",
 #debe ser una lista de usuariossegun el modelo de "User"
 async def users():
     #aqui se muestra la lista de los datos de los usuarios
-    return users_schema(db_client.local.users.find())#con el find() estamos pidiendo toda la informacion que tengamos en la base de datos
+    return users_schema(db_client.users.find())#con el find() estamos pidiendo toda la informacion que tengamos en la base de datos
 
 #ejemplo mio, para llamar mediante el id "path"
 @router.get("/{id}")
@@ -78,9 +78,9 @@ async def user(user: User): #aqui se pasa el usuario a crear
     user_dict = dict(user)#aqui dict(user) convierte el objeto en un diccionario (porque Mongo no guarda objetos Pydantic).
     del user_dict["id"]#aqui borramos "id" porque cuando se crea un usuario nuevo, Mongo genera su propio _id automáticamente.
 
-    id = db_client.local.users.insert_one(user_dict).inserted_id #aqui Se guarda el usuario en la base de datos y con inserted_id devuelve el ID (ObjectId) que Mongo le puso.
+    id = db_client.users.insert_one(user_dict).inserted_id #aqui Se guarda el usuario en la base de datos y con inserted_id devuelve el ID (ObjectId) que Mongo le puso.
 #insert_one es para crear
-    new_user = user_schema(db_client.local.users.find_one({"_id" : id}))#aqui se esta recuperando la informacion del usuario mediante el "_id" y el "id", que anteriormente mongoDB ya nos habia
+    new_user = user_schema(db_client.users.find_one({"_id" : id}))#aqui se esta recuperando la informacion del usuario mediante el "_id" y el "id", que anteriormente mongoDB ya nos habia
     #dado su "_id" creado por el y se paso a la variable de "id" por eso se hace la comparacion
 #find_one es para comparar
     return User(**new_user)#las dos "**" se utilizan para desempaquetar los archivos json y los transforma a argumentos de (id="4")
@@ -94,7 +94,7 @@ async def user(user: User):#aqui se pasa el usuario a buscar, que venga de la in
         del user_dict["id"]#aqui borramos "id" porque cuando se crea un usuario nuevo, Mongo genera su propio _id automáticamente.
 
         try:#manejo de error
-            db_client.local.users.find_one_and_replace(
+            db_client.users.find_one_and_replace(
             {"_id": ObjectId(user.id)}, # 1. El filtro para encontrar el usuario
             user_dict ) # 2. El documento de reemplazo
             #es decir, cuando se incuentra el usuario ahora el "user_dict" pasa a tener los nuevos datos actualizados, haciendo que 
@@ -108,14 +108,14 @@ async def user(user: User):#aqui se pasa el usuario a buscar, que venga de la in
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def user(id: str):
-    found = db_client.local.users.find_one_and_delete({"_id": ObjectId(id)})#aqui buscamos el usuarui y ademas "find_one_and_delete"
+    found = db_client.users.find_one_and_delete({"_id": ObjectId(id)})#aqui buscamos el usuarui y ademas "find_one_and_delete"
     #nos permite eliminar ese usuario
     if not found:
         raise {"error": "no se elimino el usuario"}
     
 def Buscar(field: str, key): #field lo que se quiere buscar, key donde se quiere encontrar o buscar
     try:
-        user = db_client.local.users.find_one({field: key})#aqui estamos haciendo es que "field" es el criterio de busqueda osea donde se tiene que buscar en la base de datos y "key" es la clave por la que el usuario esta buscando
+        user = db_client.users.find_one({field: key})#aqui estamos haciendo es que "field" es el criterio de busqueda osea donde se tiene que buscar en la base de datos y "key" es la clave por la que el usuario esta buscando
         #es decir que si quiero buscar el nombre"key" en la base de datos, pues se pasa que en donde quieres que busque "field" donde esta ubicada esa imformacion en la base de datos ejemplo "nombre(field=base de datos)==nombre(key=dato enviado por el usuario)"  
         if user is not None:#si user no esta es decir esta bacio se retorna lo de abajo
             return User(**user_schema(user))#aqui se retorna la informacion desempaquetada es decir un json limpio

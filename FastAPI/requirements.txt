@@ -1,0 +1,7 @@
+#aqui estamos creando un documento txt para que al momento de iniciar el proyecto desde un lugar local 
+#nos instale estas dependencias o libreriaas que necesita nuestro proyecto para poder funcionar como lo ibamos funcionando
+fastapi
+python-jose
+passlib
+pymongo
+python-multipart
